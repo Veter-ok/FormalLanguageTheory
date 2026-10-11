@@ -28,10 +28,6 @@ GenerateSRS {
       '---------Удаление всех литералов--------\n'  
       <DeleteAllLiterals (<CountVars (0) <Tokenize () e.LeftSide>>) <Tokenize () e.LeftSide>>
       '---------Копирование переменных---------\n'
-      <PutNum <Tokenize () e.LeftSide> (<Tokenize () e.LeftSide>)>
-      '\n'
-      <PutNum <Tokenize () e.RightSide> (<Tokenize () e.LeftSide>)>
-      '\n'
       <CopyingVars 
         <PutNum <Tokenize () e.LeftSide> (<Tokenize () e.LeftSide>)>
         (<PutNum <Tokenize () e.RightSide> (<Tokenize () e.LeftSide>)>) 
@@ -110,36 +106,36 @@ CountVars {
 
 CopyingVars {
   (Start s.Symbol) e.Rest1 ((Start s.Symbol) e.Rest2) 1 (e.Acc)  
-    = '^<      -> >^' '\n'
+    = '^<      -> ^>' '\n'
       <CopyingVars e.Rest1 (e.Rest2) 1 (e.Acc)>;
-  (End s.Symbol) e.Rest1 ((End s.Symbol) e.Rest2) s.CountVars (e.Acc) = /* empty */;
+  (End s.Symbol) e.Rest1 ((End s.Symbol) e.Rest2) s.CountVars (e.Acc) = '(>)'s.Symbol'   -> (<)'s.Symbol '\n';
   (Lit e.Symbols1) e.Rest1 ((s.Type e.Symbols2) e.Rest2) s.CountVar (e.Acc) 
     = <CopyingVars e.Rest1 ((s.Type e.Symbols2) e.Rest2) s.CountVar (e.Acc)>;
   (s.Type e.Symbols1) e.Rest1 ((Lit e.Symbols2) e.Rest2) s.CountVar (e.Acc) 
     = <CopyingVars (s.Type e.Symbols1) e.Rest1 (e.Rest2) s.CountVar (e.Acc)>;
   (Var s.Name s.Num) e.Rest1 ((Var s.Name s.Num) e.Rest2) s.CountVars (e.Acc)
-    = '>'<Symb s.Num>'[     -> '<Symb s.Num>'['<Symb s.Num>'>' '\n'
-      <Symb s.Num>'>γ     -> γ'<Symb s.Num>'>' '\n'
-      <Symb s.Num>'>]'<Symb s.Num>'    -> ]'<Symb s.Num>'>' '\n'
+    = '(>)'<Symb s.Num>'[     -> '<Symb s.Num>'[('<Symb s.Num>'>)' '\n'
+      '('<Symb s.Num>'>)γ     -> γ('<Symb s.Num>'>)' '\n'
+      '('<Symb s.Num>'>)]'<Symb s.Num>'    -> ]'<Symb s.Num>'(>)' '\n'
       <CopyingVars e.Rest1 (e.Rest2) <Add s.CountVars 1> ((Var s.Name s.Num) e.Acc) >;
   (Var s.Name1 s.Num1) e.Rest1 ((Var s.Name2 s.Num2) e.Rest2) s.CountVars (e.Acc) = <Compare s.CountVars s.Num2> : 
     {
       '-' = '----Начинаем копирование 's.Name2'----\n'
-            <CopyVarLeft (Var s.Name2 s.Num2) (Var s.Name1 s.Num1) ((Var s.Name1 s.Num1) e.Rest1)>
-            <Symb s.Num2>'\'>'<Symb s.Num1>'[   -> >'<Symb s.Num1>'[' '\n'
+            <CopyVarRight (Var s.Name2 s.Num2) (Var s.Name1 s.Num1) ((Var s.Name1 s.Num1) e.Rest1)>
+            '(f'<Symb s.Num2>'\'>)'<Symb s.Num1>'[    -> (>)'<Symb s.Num1>'[' '\n'
             '----Закончили копирование 's.Name2'----\n'
             <CopyingVars (Var s.Name1 s.Num1) e.Rest1 (e.Rest2) s.Num2 ((Var s.Name2 s.Num2) e.Acc)>;
       '+' = '----Начинаем копирование 's.Name2'----\n'
-            '>'<Symb s.Num1>'[     -> <\''<Symb s.Num2><Symb s.Num1>'[' '\n'
-            <CopyVarRight (Var s.Name2 s.Num2) (e.Acc) e.Acc>
+            '(>)'<Symb s.Num1>'[      -> (<\''<Symb s.Num2>'s)'<Symb s.Num2>'[]'<Symb s.Num2><Symb s.Num1>'[' '\n'
+            <CopyVarLeft (Var s.Name2 s.Num2) (e.Acc) e.Acc>
             '----Закончили копирование 's.Name2'----\n'
-            <CopyingVars (Var s.Name1 s.Num1) e.Rest1 (e.Rest2) s.Num2 ()>;
+            <CopyingVars (Var s.Name1 s.Num1) e.Rest1 (e.Rest2) s.Num2 ((Var s.Name2 s.Num2))>;
     };
   (End s.Symbol) e.Rest1 ((Var s.Name s.Num) e.Rest2) s.CountVars (e.Acc) = 'что-то 1\n';
   (Var s.Name s.Num) e.Rest1 ((End s.Symbol)) s.CountVars (e.Acc) 
-    = '>'<Symb s.Num>'[  -> '<Symb s.Num>'>' '\n'
-      <Symb s.Num>'>γ  -> '<Symb s.Num>'>' '\n'
-      <Symb s.Num>'>]'<Symb s.Num>' -> >' '\n'
+    = '(>)'<Symb s.Num>'[  -> ('<Symb s.Num>'>)' '\n'
+      '('<Symb s.Num>'>)γ  -> ('<Symb s.Num>'>)' '\n'
+      '('<Symb s.Num>'>)]'<Symb s.Num>' ->  (>)' '\n'
       <CopyingVars e.Rest1 ((End s.Symbol)) s.CountVars (e.Acc)>;
 }
 
@@ -155,55 +151,87 @@ GetNumOf {
   s.Count (Var s.Name) ((s.Type e.Symbols) e.Rest) = <GetNumOf s.Count (Var s.Name) (e.Rest)>;
 }
 
-CopyVarLeft {
+CopyVarRight {
   (Var s.NameSearch s.NumSearch) (Var s.NameStart s.NumStart) ((Var s.NameSearch s.NumSearch) e.Rest) e.Acc
     = <GenCopyRule (Var s.NameSearch s.NumSearch) (Var s.NameStart s.NumStart) (Var s.NameSearch s.NumSearch) e.Acc>;
   (Var s.NameSearch s.NumSearch) (Var s.NameStart s.NumStart) ((Var s.NameStart s.NumStart) e.Rest) 
-    = '>'<Symb s.NumStart>'[     -> '<Symb s.NumSearch>'[]'<Symb s.NumSearch><Symb s.NumStart>'['<Symb s.NumSearch>'\'>' '\n'
-      <Symb s.NumSearch>'\'>γ    -> γ'<Symb s.NumSearch>'\'>''\n'
-      <Symb s.NumSearch>'\'>]'<Symb s.NumStart>'   -> ]'<Symb s.NumStart><Symb s.NumSearch>'\'>''\n'
-      <CopyVarLeft (Var s.NameSearch s.NumSearch) (Var s.NameStart s.NumStart) (e.Rest) (Var s.NameStart s.NumStart)>;
+    = '(>)'<Symb s.NumStart>'[       -> '<Symb s.NumSearch>'[]'<Symb s.NumSearch><Symb s.NumStart>'[(s'<Symb s.NumSearch>'\'>)' '\n'
+      '('<Symb s.NumSearch>'\'>)'<Symb s.NumStart>'[     -> '<Symb s.NumStart>'[('<Symb s.NumSearch>'\'>)' '\n'
+      '(s'<Symb s.NumSearch>'\'>)γ     -> γ(s'<Symb s.NumSearch>'\'>)''\n'
+      '(s'<Symb s.NumSearch>'\'>)]'<Symb s.NumStart>'    -> ]'<Symb s.NumStart>'(s'<Symb s.NumSearch>'\'>)''\n'
+      <CopyVarRight (Var s.NameSearch s.NumSearch) (Var s.NameStart s.NumStart) (e.Rest) (Var s.NameStart s.NumStart)>;
   (Var s.NameSearch s.NumSearch) (Var s.NameStart s.NumStart) ((Var s.NameCur s.NumCur) e.Rest) e.Acc
     = '>'<Symb s.NumCur>'[  -> '<Symb s.NumCur>'['<Symb s.NumCur>'>' '\n'
       <Symb s.NumCur>'>γ  -> γ'<Symb s.NumCur>'>''\n'
       <Symb s.NumCur>'>]'<Symb s.NumCur>' -> ]'<Symb s.NumCur>'>''\n'
-      <CopyVarLeft (Var s.NameSearch s.NumSearch) (Var s.NameStart s.NumStart) (e.Rest) (Var s.NameCur s.NumCur) e.Acc>;
+      <CopyVarRight (Var s.NameSearch s.NumSearch) (Var s.NameStart s.NumStart) (e.Rest) (Var s.NameCur s.NumCur) e.Acc>;
 }
 
-CopyVarRight {
+CopyVarLeft {
   (Var s.NameSearch s.NumSearch) ((Var s.NameSearch s.NumSearch)) e.RightSide2 (Var s.NameSearch s.NumSearch)
-    = 'λ]'<Symb s.NumSearch>'<\''<Symb s.NumSearch>'  -> ]'<Symb s.NumSearch>'λ'<Symb s.NumSearch>'\'>' '\n'
-      <CopyVarRight (Var s.NameSearch s.NumSearch) () e.RightSide2>;
+    = <Symb s.NumSearch>'[]'<Symb s.NumSearch>'(<\''<Symb s.NumSearch>'s) -> '<Symb s.NumSearch>'[]'<Symb s.NumSearch>'(f'<Symb s.NumSearch>'\'>)' '\n'
+      'λ]'<Symb s.NumSearch>'(<\''<Symb s.NumSearch>'s)  -> @λ]'<Symb s.NumSearch>'(λ'<Symb s.NumSearch>'\'>)' '\n'
+      ']'<Symb s.NumSearch>'(<\''<Symb s.NumSearch>')    -> (<\''<Symb s.NumSearch>')]'<Symb s.NumSearch> '\n'
+      'γ(<\''<Symb s.NumSearch>')     -> (<\''<Symb s.NumSearch>')γ' '\n'
+      'λ@(<\''<Symb s.NumSearch>')    -> @λ(λ'<Symb s.NumSearch>'\'>)' '\n'
+      <Symb s.NumSearch>'[@(<\''<Symb s.NumSearch>')   -> '<Symb s.NumSearch>'[(f'<Symb s.NumSearch>'\'>)' '\n'
+      '(λ'<Symb s.NumSearch>'\'>)γ    -> γ(λ'<Symb s.NumSearch>'\'>)' '\n'
+      '(f'<Symb s.NumSearch>'\'>)γ    -> γ(f'<Symb s.NumSearch>'\'>)' '\n'
+      '(λ'<Symb s.NumSearch>'\'>)]'<Symb s.NumSearch>'   -> ]'<Symb s.NumSearch>'(λ'<Symb s.NumSearch>'\'>)' '\n'
+      '(f'<Symb s.NumSearch>'\'>)]'<Symb s.NumSearch>'   -> ]'<Symb s.NumSearch>'(f'<Symb s.NumSearch>'\'>)' '\n'
+      <CopyVarLeft (Var s.NameSearch s.NumSearch) () e.RightSide2>;
   (Var s.NameSearch s.NumSearch) ((Var s.NameCur s.NumCur) e.RightSide1) e.RightSide2 
-    = ']'<Symb s.NumCur>'<\''<Symb s.NumSearch>'   -> <\''<Symb s.NumSearch>']'<Symb s.NumCur> '\n'
-      'γ<\''<Symb s.NumSearch>'    -> <\''<Symb s.NumSearch>'γ' '\n'
-      <Symb s.NumCur>'[<\''<Symb s.NumSearch>'   -> <\''<Symb s.NumSearch><Symb s.NumCur>'[' '\n'
-      <CopyVarRight (Var s.NameSearch s.NumSearch) (e.RightSide1) e.RightSide2>;
-  (Var s.NameSearch s.NumSearch) () (Var s.NameCur s.NumCur)
-    = 'λ'<Symb s.NumSearch>'\'>'<Symb s.NumCur>'[  -> '<Symb s.NumCur>'[λ'<Symb s.NumSearch>'\'>' '\n'
-      'λ'<Symb s.NumSearch>'\'>γ   -> γλ'<Symb s.NumSearch>'\'>' '\n'
-      'λ'<Symb s.NumSearch>'\'>]'<Symb s.NumCur>'  -> ]'<Symb s.NumCur>'λ'<Symb s.NumSearch>'\'>' '\n'
-      'λ'<Symb s.NumSearch>'\'>'<Symb s.NumSearch>'[  -> <\''<Symb s.NumSearch><Symb s.NumSearch>'[λ' '\n';
+    = ']'<Symb s.NumCur>'(<\''<Symb s.NumSearch>'s)   -> (<\''<Symb s.NumSearch>'s)]'<Symb s.NumCur> '\n'
+      'γ(<\''<Symb s.NumSearch>'s)    -> (<\''<Symb s.NumSearch>'s)γ' '\n'
+      <Symb s.NumCur>'[(<\''<Symb s.NumSearch>'s)   -> (<\''<Symb s.NumSearch>'s)'<Symb s.NumCur>'[' '\n'
+      ']'<Symb s.NumCur>'(<\''<Symb s.NumSearch>')    -> (<\''<Symb s.NumSearch>')]'<Symb s.NumCur> '\n'
+      'γ(<\''<Symb s.NumSearch>')     -> (<\''<Symb s.NumSearch>')γ' '\n'
+      <Symb s.NumCur>'[(<\''<Symb s.NumSearch>')    -> (<\''<Symb s.NumSearch>')'<Symb s.NumCur>'[' '\n'
+      <CopyVarLeft (Var s.NameSearch s.NumSearch) (e.RightSide1) e.RightSide2>;
   (Var s.NameSearch s.NumSearch) () e.RightSide (Var s.NameCur s.NumCur)
-    = 'λ'<Symb s.NumSearch>'\'>'<Symb s.NumCur>'[  -> '<Symb s.NumCur>'[λ'<Symb s.NumSearch>'\'>' '\n'
-      'λ'<Symb s.NumSearch>'\'>γ   -> γλ'<Symb s.NumSearch>'\'>' '\n'
-      'λ'<Symb s.NumSearch>'\'>]'<Symb s.NumCur>'  -> ]'<Symb s.NumCur>'λ'<Symb s.NumSearch>'\'>' '\n'
-      <CopyVarRight (Var s.NameSearch s.NumSearch) () e.RightSide>;
+    = '(λ'<Symb s.NumSearch>'\'>)'<Symb s.NumCur>'[   -> '<Symb s.NumCur>'[(λ'<Symb s.NumSearch>'\'>)' '\n'
+      '(f'<Symb s.NumSearch>'\'>)'<Symb s.NumCur>'[   -> '<Symb s.NumCur>'[(f'<Symb s.NumSearch>'\'>)' '\n'
+      '(λ'<Symb s.NumSearch>'\'>)γ    -> γ(λ'<Symb s.NumSearch>'\'>)' '\n'
+      '(f'<Symb s.NumSearch>'\'>)γ    -> γ(f'<Symb s.NumSearch>'\'>)' '\n'
+      '(λ'<Symb s.NumSearch>'\'>)]'<Symb s.NumCur>'   -> ]'<Symb s.NumCur>'(λ'<Symb s.NumSearch>'\'>)' '\n'
+      '(f'<Symb s.NumSearch>'\'>)]'<Symb s.NumCur>'   -> ]'<Symb s.NumCur>'(f'<Symb s.NumSearch>'\'>)' '\n'
+      <CopyVarLeft (Var s.NameSearch s.NumSearch) () e.RightSide>;
+  (Var s.NameSearch s.NumSearch) () 
+    = '(λ'<Symb s.NumSearch>'\'>)'<Symb s.NumSearch>'[   -> '<Symb s.NumSearch>'[(λ'<Symb s.NumSearch>'\'>)' '\n'
+      '(f'<Symb s.NumSearch>'\'>)'<Symb s.NumSearch>'[   -> '<Symb s.NumSearch>'[(f'<Symb s.NumSearch>'\'>)' '\n'
+      '(λ'<Symb s.NumSearch>'\'>)γ    -> γ(λ'<Symb s.NumSearch>'\'>)' '\n'
+      '(f'<Symb s.NumSearch>'\'>)γ    -> γ(f'<Symb s.NumSearch>'\'>)' '\n'
+      '(λ'<Symb s.NumSearch>'\'>)]'<Symb s.NumSearch>'   -> (<\''<Symb s.NumSearch>')λ]'<Symb s.NumSearch> '\n'
+      '(f'<Symb s.NumSearch>'\'>)]'<Symb s.NumSearch>'   -> ]'<Symb s.NumSearch>'(>)' '\n'
+      'γ(<\''<Symb s.NumSearch>')     -> (<\''<Symb s.NumSearch>')γ' '\n'
+      <Symb s.NumSearch>'[(<\''<Symb s.NumSearch>')    -> (<\''<Symb s.NumSearch>')'<Symb s.NumSearch>'[' '\n';
+
 }
 
 GenCopyRule {
   (Var s.NameSearch s.NumSearch) (Var s.NameStart s.NumStart) (Var s.NameSearch s.NumSearch) e.Rest 
-    = <Symb s.NumSearch>'\'>'<Symb s.NumSearch>'[   -> '<Symb s.NumSearch>'['<Symb s.NumSearch>'\'>' '\n'
-      <Symb s.NumSearch>'\'>λ    -> <\''<Symb s.NumSearch>'λ''\n'
-      <Symb s.NumSearch>'[<\''<Symb s.NumSearch>'λ  -> <\''<Symb s.NumSearch>'λ'<Symb s.NumSearch>'[' '\n'
+    = '(s'<Symb s.NumSearch>'\'>)'<Symb s.NumSearch>'[]'<Symb s.NumSearch>'  -> (<\''<Symb s.NumSearch>'f)'<Symb s.NumSearch>'[]'<Symb s.NumSearch> '\n'
+      '(s'<Symb s.NumSearch>'\'>)'<Symb s.NumSearch>'[λ   -> (<\''<Symb s.NumSearch>'λ)'<Symb s.NumSearch>'[λ@' '\n'
+      '('<Symb s.NumSearch>'\'>)'<Symb s.NumSearch>'[     -> '<Symb s.NumSearch>'[('<Symb s.NumSearch>'\'>)' '\n'
+      '('<Symb s.NumSearch>'\'>)γ      -> γ('<Symb s.NumSearch>'\'>)' '\n'
+      '('<Symb s.NumSearch>'\'>)@λ     -> (<\''<Symb s.NumSearch>'λ)λ@' '\n'
+      '('<Symb s.NumSearch>'\'>)@]'<Symb s.NumSearch>'    -> (<\''<Symb s.NumSearch>'f)]'<Symb s.NumSearch> '\n'
+      'γ(<\''<Symb s.NumSearch>'λ)     -> (<\''<Symb s.NumSearch>'λ)γ' '\n'
+      'γ(<\''<Symb s.NumSearch>'f)     -> (<\''<Symb s.NumSearch>'f)γ' '\n'
+      <Symb s.NumSearch>'[(<\''<Symb s.NumSearch>'λ)    -> (<\''<Symb s.NumSearch>'λ)'<Symb s.NumSearch>'[' '\n'
+      <Symb s.NumSearch>'[(<\''<Symb s.NumSearch>'f)    -> (<\''<Symb s.NumSearch>'f)'<Symb s.NumSearch>'[' '\n'
       <GenCopyRule (Var s.NameSearch s.NumSearch) (Var s.NameStart s.NumStart) e.Rest >;
   (Var s.NameSearch s.NumSearch) (Var s.NameStart s.NumStart) (Var s.NameCur s.NumCur) e.Rest 
-    = ']'<Symb s.NumCur>'<\''<Symb s.NumSearch>'λ  -> <\''<Symb s.NumSearch>'λ]'<Symb s.NumCur> '\n'
-      'γ<\''<Symb s.NumSearch>'λ   -> <\''<Symb s.NumSearch>'λγ' '\n'
-      <Symb s.NumCur>'[<\''<Symb s.NumSearch>'λ  -> <\''<Symb s.NumSearch>'λ'<Symb s.NumCur>'[' '\n'
+    = ']'<Symb s.NumCur>'(<\''<Symb s.NumSearch>'λ)    -> (<\''<Symb s.NumSearch>'λ)]'<Symb s.NumCur> '\n'
+    ']'<Symb s.NumCur>'(<\''<Symb s.NumSearch>'f)    -> (<\''<Symb s.NumSearch>'f)]'<Symb s.NumCur> '\n'
+      'γ(<\''<Symb s.NumSearch>'λ)     -> (<\''<Symb s.NumSearch>'λ)γ' '\n'
+      'γ(<\''<Symb s.NumSearch>'f)     -> (<\''<Symb s.NumSearch>'f)γ' '\n'
+      <Symb s.NumCur>'[(<\''<Symb s.NumSearch>'λ)    -> (<\''<Symb s.NumSearch>'λ)'<Symb s.NumCur>'[' '\n'
+      <Symb s.NumCur>'[(<\''<Symb s.NumSearch>'f)    -> (<\''<Symb s.NumSearch>'f)'<Symb s.NumCur>'[' '\n'
       <GenCopyRule (Var s.NameSearch s.NumSearch) (Var s.NameStart s.NumStart) e.Rest>;
   (Var s.NameSearch s.NumSearch) (Var s.NameStart s.NumStart)
-    = ']'<Symb s.NumSearch>'<\''<Symb s.NumSearch>'λ  -> λ]'<Symb s.NumSearch><Symb s.NumSearch>'\'>' '\n';
+    = ']'<Symb s.NumSearch>'(<\''<Symb s.NumSearch>'λ)    -> λ]'<Symb s.NumSearch>'('<Symb s.NumSearch>'\'>)' '\n'
+      ']'<Symb s.NumSearch>'(<\''<Symb s.NumSearch>'f)    -> ]'<Symb s.NumSearch>'(f'<Symb s.NumSearch>'\'>)' '\n';
 }
 
 IsUpper {
