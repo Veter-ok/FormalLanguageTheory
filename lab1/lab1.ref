@@ -1,21 +1,3 @@
-* ^XaaYZ$ = ^XZXaYX$
-* ^bbaapqr$
-* ^1[bb]1 aa 2[]2 3[pqr]3$
-* ^1[bb]1 2[]2 3[pqr]3$
-* Сортировка началась
-* >^1[bb]1 2[]2 3[pqr]3$
-* ^1[bb]1 > 2[]2 3[pqr]3$
-* ^1[bb]1 3[pqr]3 > 2[]2 3[pqr]3$
-* ^1[bb]1 3[pqr]3 1[bb]1 > 2[]2 3[pqr]3$
-* ^1[bb]1 3[pqr]3 1[bb]1 2[]2 1[bb]1 > 3[pqr]3$
-* ^1[bb]1 3[pqr]3 1[bb]1 2[]2 1[bb]1 $
-* Сортировка закончилась
-* ^1[bb]1 3[pqr]3 1[bb]1 a 2[]2 1[bb]1 $
-* ^bbpqrbbabb$
-
-* (Start ^)(Var X1 )(Var Z3 )(Var X1 )(Lit a)(Var Y2 )(Var X1 )(End $)
-* (Start ^)(Var X1 )(Lit aa)(Var Y2 )(Var Z3 )(End $)
-
 $ENTRY Go {
   = <Prout 'Введите правило (например, ^XaaYZ$ = ^XZXaYX$):'>
     <Prout <GenerateSRS <Get 0>>>;
@@ -35,7 +17,9 @@ GenerateSRS {
         ()
       >
       '------------Вставка литералов-----------\n'
-      '-------------Удаление скобок------------\n';
+      <PutLits <PutNum <Tokenize () e.RightSide> (<Tokenize () e.LeftSide>)>>
+      '-------------Удаление скобок------------\n'
+      <DeleteBrackets <PutNum <Tokenize () e.RightSide> (<Tokenize () e.LeftSide>)>>;
 }
 
 Tokenize {
@@ -71,30 +55,30 @@ AddAllSymbols {
 }
 
 TakeVarInBrackets {
-  (s.CountVars) (Start s.Symbol) e.Rest = '^   -> ^>' '\n' <TakeVarInBrackets (s.CountVars) e.Rest>;
-  (s.CountVars) (End s.Symbol) e.Rest = '>$ -> <$' '\n' <TakeVarInBrackets (s.CountVars) e.Rest>;
+  (s.CountVars) (Start s.Symbol) e.Rest = '^      -> ^(>)' '\n' <TakeVarInBrackets (s.CountVars) e.Rest>;
+  (s.CountVars) (End s.Symbol) e.Rest = '(>)$ -> *<)$' '\n' <TakeVarInBrackets (s.CountVars) e.Rest>;
 
-  (s.CountVars) (Var s.Symbol) (Lit e.Symbols) e.Rest = '>γ  -> ' <Symb s.CountVars>'[γ '<Symb s.CountVars>'>'      '\n'
-                                                        <Symb s.CountVars>'>γ -> γ '<Symb s.CountVars>'>'           '\n'
-                                                        <Symb s.CountVars>'>'e.Symbols' -> ]'<Symb s.CountVars>' >'e.Symbols '\n'
+  (s.CountVars) (Var s.Symbol) (Lit e.Symbols) e.Rest = '(>)γ   -> ' <Symb s.CountVars>'[γ('<Symb s.CountVars>'>)'      '\n'
+                                                        <Symb s.CountVars>'>γ    -> γ '<Symb s.CountVars>'>'           '\n'
+                                                        '('<Symb s.CountVars>'>)'e.Symbols' -> ]'<Symb s.CountVars>'(>)'e.Symbols '\n'
                                                         <TakeVarInBrackets (<Add s.CountVars 1>) (Lit e.Symbols) e.Rest>;
-  (s.CountVars) (Var s.Symbol1) (End s.Symbol2) e.Rest = '>γ  -> ' <Symb s.CountVars>'[γ '<Symb s.CountVars>'>'         '\n'
-                                                         <Symb s.CountVars>'>γ -> γ '<Symb s.CountVars>'>'            '\n'
-                                                         <Symb s.CountVars>'>'s.Symbol2' -> ]'<Symb s.CountVars>' >$' '\n';
-  (s.CountVars) (Var s.Symbol1) (Var s.Symbol2) e.Rest = '>γ  -> ' <Symb s.CountVars>'[]'<Symb s.CountVars>' >γ'     '\n'
+  (s.CountVars) (Var s.Symbol1) (End s.Symbol2) e.Rest = '(>)γ   -> ' <Symb s.CountVars>'[γ('<Symb s.CountVars>'>)'         '\n'
+                                                         '('<Symb s.CountVars>'>)γ  -> γ('<Symb s.CountVars>'>)'            '\n'
+                                                         '('<Symb s.CountVars>'>)'s.Symbol2'  -> ]'<Symb s.CountVars>'(>)$' '\n';
+  (s.CountVars) (Var s.Symbol1) (Var s.Symbol2) e.Rest = '(>)γ   -> ' <Symb s.CountVars>'[]'<Symb s.CountVars>'(>)γ'     '\n'
                                                          <TakeVarInBrackets (<Add s.CountVars 1>) (Var s.Symbol2) e.Rest>;
-  (s.CountVars) (Lit e.Symbols) e.Rest = '>'e.Symbols ' -> 'e.Symbols'>' '\n' <TakeVarInBrackets (s.CountVars) e.Rest>;
+  (s.CountVars) (Lit e.Symbols) e.Rest = '(>)'e.Symbols '  -> 'e.Symbols'(>)' '\n' <TakeVarInBrackets (s.CountVars) e.Rest>;
   (s.CountVars)  = /* empty */;
 }
 
 DeleteAllLiterals {
   (s.CountVars) e.Rest (End s.Symbol)  = <DeleteAllLiterals (s.CountVars) e.Rest>;
-  (s.CountVars) e.Rest (Lit e.Symbols) = e.Symbols'< -> <' '\n' <DeleteAllLiterals (s.CountVars) e.Rest>;
-  (s.CountVars) e.Rest (Var s.Symbol)  = ']'<Symb s.CountVars>'< -> <'<Symb s.CountVars>' ]'<Symb s.CountVars> '\n' 
-                                         'γ<'<Symb s.CountVars> ' -> <' <Symb s.CountVars>'γ' '\n'
-                                         <Symb s.CountVars>'[ <'<Symb s.CountVars> ' -> < ' <Symb s.CountVars>'[' '\n'
+  (s.CountVars) e.Rest (Lit e.Symbols) = e.Symbols'(<)  -> (<)' '\n' <DeleteAllLiterals (s.CountVars) e.Rest>;
+  (s.CountVars) e.Rest (Var s.Symbol)  = ']'<Symb s.CountVars>'(<)  -> (<'<Symb s.CountVars>')]'<Symb s.CountVars> '\n' 
+                                         'γ(<'<Symb s.CountVars>')  -> (<'<Symb s.CountVars>')γ' '\n'
+                                         <Symb s.CountVars>'[(<'<Symb s.CountVars>') -> (<)'<Symb s.CountVars>'[' '\n'
                                          <DeleteAllLiterals (<Sub s.CountVars 1>) e.Rest>;
-  (s.CountVars) e.Rest (Start s.Symbol) = '^< -> ^>' '\n' <DeleteAllLiterals (s.CountVars) e.Rest>;
+  (s.CountVars) e.Rest (Start s.Symbol) = '^(<)   -> ^(>)' '\n' <DeleteAllLiterals (s.CountVars) e.Rest>;
   (0) = /* empty */;
 }
 
@@ -106,7 +90,7 @@ CountVars {
 
 CopyingVars {
   (Start s.Symbol) e.Rest1 ((Start s.Symbol) e.Rest2) 1 (e.Acc)  
-    = '^<      -> ^>' '\n'
+    = '^(<)      -> ^(>)' '\n'
       <CopyingVars e.Rest1 (e.Rest2) 1 (e.Acc)>;
   (End s.Symbol) e.Rest1 ((End s.Symbol) e.Rest2) s.CountVars (e.Acc) = '(>)'s.Symbol'   -> (<)'s.Symbol '\n';
   (Lit e.Symbols1) e.Rest1 ((s.Type e.Symbols2) e.Rest2) s.CountVar (e.Acc) 
@@ -232,6 +216,37 @@ GenCopyRule {
   (Var s.NameSearch s.NumSearch) (Var s.NameStart s.NumStart)
     = ']'<Symb s.NumSearch>'(<\''<Symb s.NumSearch>'λ)    -> λ]'<Symb s.NumSearch>'('<Symb s.NumSearch>'\'>)' '\n'
       ']'<Symb s.NumSearch>'(<\''<Symb s.NumSearch>'f)    -> ]'<Symb s.NumSearch>'(f'<Symb s.NumSearch>'\'>)' '\n';
+}
+
+PutLits {
+  e.Rest (End s.Symbol) = <PutLits e.Rest>;
+  e.Rest (Var s.Name s.Num) 
+    = ']'<Symb s.Num>'(<)  -> (<'<Symb s.Num>')]'<Symb s.Num> '\n'
+      'γ(<'<Symb s.Num>')  -> (<'<Symb s.Num>')γ' '\n'
+      <Symb s.Num>'[(<'<Symb s.Num>') ->  (<)'<Symb s.Num>'[' '\n'
+      <PutLits e.Rest>;
+  e.Rest (Var s.Name s.Num) (Lit e.Symbols) 
+    = ']'<Symb s.Num>'(<)  ->  ]'<Symb s.Num>'(<)'e.Symbols '\n'
+      <PutLits e.Rest (Var s.Name s.Num)>;
+  e.Rest (Start s.Symbol) (Lit e.Symbols) 
+    = s.Symbol'(<)  ->  's.Symbol e.Symbols'(<)' '\n'
+      <PutLits e.Rest (Start s.Symbol)>;
+  e.Rest (Start s.Symbol)
+    = s.Symbol'(<)   ->  's.Symbol'(>)' '\n';
+}
+
+DeleteBrackets {
+  (Start s.Symbol) e.Rest = <DeleteBrackets e.Rest>;
+  (Lit e.Symbols) e.Rest 
+    = '(>)'e.Symbols'    -> 'e.Symbols'(>)' '\n'
+      <DeleteBrackets e.Rest>;
+  (Var s.Name s.Num) e.Rest 
+    = '(>)'<Symb s.Num>'[   ->  ('<Symb s.Num>'>)' '\n'
+      '('<Symb s.Num>'>)γ   -> γ('<Symb s.Num>'>)' '\n'
+      '('<Symb s.Num>'>)]'<Symb s.Num>'  -> ('<Symb s.Num>'>)' '\n'
+      <DeleteBrackets e.Rest>;
+  (End s.Symbol) e.Rest 
+    = '(>)'s.Symbol '    ->  's.Symbol '\n'
 }
 
 IsUpper {
