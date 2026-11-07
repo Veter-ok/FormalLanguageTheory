@@ -1,0 +1,42 @@
+$ENTRY Go {
+    = <GenerateREG <Card>>;
+}
+
+GenerateREG {
+    e.Input = <Prout <Tokenize e.Input>>
+}
+
+Tokenize {
+    '*' e.String-E = (MUL '*') <Tokenize e.String-E>;
+    '(' e.String-E = (OPEN '(') <Tokenize e.String-E>;
+    ')' e.String-E = (CLOSE ')') <Tokenize e.String-E>;
+    '\\' e.String-E = (DEL '\\') <Tokenize e.String-E>;
+    '|' e.String-E = (CHOICE '|') <Tokenize e.String-E>;
+    s.Symbol e.String-E = <IsLetter s.Symbol <Alfabet>> :
+    {
+        TRUE  = <Tokenize <AddAllSymbols (CONST s.Symbol) e.String-E>>;
+        FALSE = (ERROR s.Symbol) <Tokenize e.String-E>;
+    };
+    (e.Token) s.Symbol e.String-E = (e.Token) <Tokenize s.Symbol e.String-E>;
+    (e.Token) = (e.Token);
+    /* empty */ = /* empty */;
+}
+
+AddAllSymbols {
+    (CONST e.Symbols) s.Symbol '*' e.Rest = (CONST e.Symbols) s.Symbol '*' e.Rest;
+    (CONST e.Symbols) s.Symbol e.Rest = <IsLetter s.Symbol <Alfabet>> :
+    {
+        TRUE  = <AddAllSymbols (CONST e.Symbols s.Symbol) e.Rest>;
+        FALSE = (CONST e.Symbols) s.Symbol e.Rest;
+    };
+    (CONST e.Symbols) = (CONST e.Symbols);
+}
+
+Alfabet {
+    = ('abcdefghijklmnopqrstuvwxyz')
+}
+
+IsLetter {
+    s.Symbol (e.Alfabet-B s.Symbol e.Alfabet-E) = TRUE;
+    s.Symbol (e.Alfabet) = FALSE;
+}
