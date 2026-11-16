@@ -3,7 +3,7 @@ $ENTRY Go {
 }
 
 GenerateREG {
-    e.Input = <Prout <Tokenize e.Input>>
+    e.Input = <Prout <GenerateTree <Tokenize e.Input>>>;
 }
 
 Tokenize {
@@ -23,13 +23,68 @@ Tokenize {
 }
 
 AddAllSymbols {
-    (CONST e.Symbols) s.Symbol '*' e.Rest = (CONST e.Symbols) s.Symbol '*' e.Rest;
-    (CONST e.Symbols) s.Symbol e.Rest = <IsLetter s.Symbol <Alfabet>> :
+    (CONST e.Symbols) s.Symbol '*' e.Tokens-E = (CONST e.Symbols) s.Symbol '*' e.Tokens-E;
+    (CONST e.Symbols) s.Symbol e.Tokens-E = <IsLetter s.Symbol <Alfabet>> :
     {
-        TRUE  = <AddAllSymbols (CONST e.Symbols s.Symbol) e.Rest>;
-        FALSE = (CONST e.Symbols) s.Symbol e.Rest;
+        TRUE  = <AddAllSymbols (CONST e.Symbols s.Symbol) e.Tokens-E>;
+        FALSE = (CONST e.Symbols) s.Symbol e.Tokens-E;
     };
     (CONST e.Symbols) = (CONST e.Symbols);
+}
+
+GenerateTree {
+    e.Tokens = <BuildAlt <Split 0 () () e.Tokens>>;
+}
+
+BuildAlt {
+    (e.Tokens) = <GenerateSeq e.Tokens>;
+    e.Alts     = (OPTION <WrapAlts e.Alts>);
+}
+
+WrapAlts {
+    (e.Tokens) e.Rest = <Wrap <GenerateSeq e.Tokens>> <WrapAlts e.Rest>;
+    /* empty */       = /* empty */;
+}
+
+Wrap {
+    (e.Node) = (e.Node);
+    e.Nodes  = (SEQ e.Nodes);
+}
+
+Split {
+    0 (e.Alts) (e.Cur) (CHOICE '|') e.Tokens-E = <Split 0 (e.Alts (e.Cur)) () e.Tokens-E>;
+    s.Depth (e.Alts) (e.Cur) (OPEN '(') e.Tokens-E = <Split <Add s.Depth 1> (e.Alts) (e.Cur (OPEN '(')) e.Tokens-E>;
+    s.Depth (e.Alts) (e.Cur) (CLOSE ')') e.Tokens-E = <Split <Sub s.Depth 1> (e.Alts) (e.Cur (CLOSE ')')) e.Tokens-E>;
+    s.Depth (e.Alts) (e.Cur) t.Token e.Tokens-E = <Split s.Depth (e.Alts) (e.Cur t.Token) e.Tokens-E>;
+    s.Depth (e.Alts) (e.Cur) = e.Alts (e.Cur);
+}
+
+GenerateSeq {
+    e.Tokens-B (CONST e.Symbols) (MUL '*') = <GenerateSeq e.Tokens-B> (MUL (CONST e.Symbols));
+    e.Tokens-B (CLOSE ')') (MUL '*')
+        = <GenerateSeq <GetAllOutBrackets 0 e.Tokens-B>>
+          (MUL <Wrap <GenerateTree <GetAllInBrackets 0 e.Tokens-B>>>);
+    e.Tokens-B (CLOSE ')')
+        = <GenerateSeq <GetAllOutBrackets 0 e.Tokens-B>>
+          <GenerateTree <GetAllInBrackets 0 e.Tokens-B>>;
+    e.Tokens-B (CONST e.Symbols) = <GenerateSeq e.Tokens-B> (CONST e.Symbols);
+    /* empty */ = /* empty */;
+}
+
+GetAllInBrackets {
+    0 e.Tokens-B (OPEN '(') = /* empty */;
+    s.Count e.Tokens-B (CLOSE ')') = <GetAllInBrackets <Add s.Count 1> e.Tokens-B> (CLOSE ')');
+    s.Count e.Tokens-B (OPEN '(') = <GetAllInBrackets <Sub s.Count 1> e.Tokens-B> (OPEN '(');
+    s.Count e.Tokens-B (s.Token e.Symbols) = <GetAllInBrackets s.Count e.Tokens-B> (s.Token e.Symbols);
+}
+
+GetAllOutBrackets {
+    TAKE e.Tokens-B (s.Token e.Symbols) =  <GetAllOutBrackets TAKE e.Tokens-B> (s.Token e.Symbols);
+    TAKE = /* empty */;
+    0 e.Tokens-B (OPEN '(') =  <GetAllOutBrackets TAKE e.Tokens-B>;
+    s.Count e.Tokens-B (CLOSE ')') = <GetAllOutBrackets <Add s.Count 1> e.Tokens-B>;
+    s.Count e.Tokens-B (OPEN '(') = <GetAllOutBrackets <Sub s.Count 1> e.Tokens-B>;
+    s.Count e.Tokens-B (s.Token e.Symbols) = <GetAllOutBrackets s.Count e.Tokens-B>;
 }
 
 Alfabet {
