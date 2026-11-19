@@ -3,7 +3,7 @@ $ENTRY Go {
 }
 
 GenerateREG {
-    e.Input = <Prout <GenerateTree <Tokenize e.Input>>>;
+    e.Input = <Prout <ConvertToREG <RidOfDEL <GenerateTree <Tokenize e.Input>>>>>;
 }
 
 Tokenize {
@@ -89,6 +89,34 @@ GetAllOutBrackets {
     s.Count e.Tokens-B (CLOSE ')') = <GetAllOutBrackets <Add s.Count 1> e.Tokens-B>;
     s.Count e.Tokens-B (OPEN '(') = <GetAllOutBrackets <Sub s.Count 1> e.Tokens-B>;
     s.Count e.Tokens-B (s.Token e.Symbols) = <GetAllOutBrackets s.Count e.Tokens-B>;
+}
+
+RidOfDEL {
+    (MUL e.Operands) e.Tokens-E = (MUL <RidOfDEL e.Operands>) <RidOfDEL e.Tokens-E>;
+    (OPTION e.Operands) e.Tokens-E = (OPTION <RidOfDEL e.Operands>) <RidOfDEL e.Tokens-E>;
+    (DEL e.Operands) e.Tokens-E = (DEL <RidOfDEL e.Operands>) <RidOfDEL e.Tokens-E>;
+    (CONST e.Symbols) e.Tokens-E = (CONST e.Symbols) <RidOfDEL e.Tokens-E>;
+    (SEQ e.Operands) e.Tokens-E = (SEQ <RidOfDEL e.Operands>) <RidOfDEL e.Tokens-E>;
+    /* empty */ = /* empty */;
+}
+
+ConvertToREG {
+    (MUL (CONST e.Symbols)) e.Tokens-E = '('e.Symbols')*' <ConvertToREG e.Tokens-E>;
+    (MUL t.Operand) e.Tokens-E = <ConvertToREG t.Operand>'*' <ConvertToREG e.Tokens-E>;
+    (MUL e.Operands) e.Tokens-E = '('<ConvertToREG e.Operands>')*' <ConvertToREG e.Tokens-E>;
+    (OPTION e.Operands) e.Tokens-E = '('<ConvertOptionToREG e.Operands>')' <ConvertToREG e.Tokens-E>;
+    (DEL t.Operand1 t.Operand2) e.Tokens-E = 
+        '('<ConvertToREG t.Operand1> '\\' <ConvertToREG t.Operand2>')' <ConvertToREG e.Tokens-E>;
+    (CONST e.Symbols) e.Tokens-E = e.Symbols <ConvertToREG e.Tokens-E>;
+    (SEQ e.Operands) e.Tokens-E = (SEQ <ConvertToREG e.Operands>) <ConvertToREG e.Tokens-E>;
+    /* empty */ = /* empty */;
+}
+
+ConvertOptionToREG {
+    (CONST e.Symbols) = e.Symbols;
+    (s.Type e.Operands) = <ConvertToREG e.Operands>;
+    (CONST e.Symbols) e.Operand-E = e.Symbols '|' <ConvertOptionToREG e.Operand-E>;
+    (s.Type e.Operands) e.Operand-E = <ConvertToREG e.Operands> '|' <ConvertOptionToREG e.Operand-E>;
 }
 
 Alfabet {
