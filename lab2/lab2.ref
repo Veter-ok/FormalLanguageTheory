@@ -33,12 +33,16 @@ AddAllSymbols {
 }
 
 GenerateTree {
-    e.Tokens = <BuildAlt <Split 0 () () e.Tokens>>;
+    e.Tokens = <BuildTree DEL <Split DEL 0 () () e.Tokens>>;
 }
 
-BuildAlt {
-    (e.Tokens) = <GenerateSeq e.Tokens>;
-    e.Alts     = (OPTION <WrapAlts e.Alts>);
+BuildTree {
+    DEL (e.Tokens) = <BuildTree CHOICE <Split CHOICE 0 () () e.Tokens>>;
+    DEL e.Parts (e.Last) =
+        (DEL <Wrap <BuildTree DEL e.Parts>>
+             <Wrap <BuildTree CHOICE <Split CHOICE 0 () () e.Last>>>);
+    CHOICE (e.Tokens) = <GenerateSeq e.Tokens>;
+    CHOICE e.Alts = (OPTION <WrapAlts e.Alts>);
 }
 
 WrapAlts {
@@ -52,11 +56,11 @@ Wrap {
 }
 
 Split {
-    0 (e.Alts) (e.Cur) (CHOICE '|') e.Tokens-E = <Split 0 (e.Alts (e.Cur)) () e.Tokens-E>;
-    s.Depth (e.Alts) (e.Cur) (OPEN '(') e.Tokens-E = <Split <Add s.Depth 1> (e.Alts) (e.Cur (OPEN '(')) e.Tokens-E>;
-    s.Depth (e.Alts) (e.Cur) (CLOSE ')') e.Tokens-E = <Split <Sub s.Depth 1> (e.Alts) (e.Cur (CLOSE ')')) e.Tokens-E>;
-    s.Depth (e.Alts) (e.Cur) t.Token e.Tokens-E = <Split s.Depth (e.Alts) (e.Cur t.Token) e.Tokens-E>;
-    s.Depth (e.Alts) (e.Cur) = e.Alts (e.Cur);
+    s.Sep 0 (e.Alts) (e.Cur) (s.Sep s.Char) e.Tokens-E = <Split s.Sep 0 (e.Alts (e.Cur)) () e.Tokens-E>;
+    s.Sep s.Depth (e.Alts) (e.Cur) (OPEN '(') e.Tokens-E = <Split s.Sep <Add s.Depth 1> (e.Alts) (e.Cur (OPEN '(')) e.Tokens-E>;
+    s.Sep s.Depth (e.Alts) (e.Cur) (CLOSE ')') e.Tokens-E = <Split s.Sep <Sub s.Depth 1> (e.Alts) (e.Cur (CLOSE ')')) e.Tokens-E>;
+    s.Sep s.Depth (e.Alts) (e.Cur) t.Token e.Tokens-E = <Split s.Sep s.Depth (e.Alts) (e.Cur t.Token) e.Tokens-E>;
+    s.Sep s.Depth (e.Alts) (e.Cur) = e.Alts (e.Cur);
 }
 
 GenerateSeq {
